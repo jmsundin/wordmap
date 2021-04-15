@@ -21,17 +21,18 @@ from spacy.pipeline.dep_parser import DEFAULT_PARSER_MODEL # for sentence parsin
 
 
 
-def getSentences(nlp, text):
+def get_sentences(nlp, text):
     config = {"punct_chars": None}
     nlp.add_pipe("sentencizer", config=config)
     
     return nlp(text)
 
 
-def parseSentence():
-    pass
+def parse_sentence(sentences):
+    for sentence in sentences:
 
-def showGraph():
+
+def show_graph():
     pass
 
 def wordmap():
@@ -53,8 +54,9 @@ This Python snippet will be the first of many you'll use to learn all the tricks
 
 == Natural language vs. programming language'''
 
-    sentences = list(getSentences(nlp, text).sents)
-    print(type(sentences[0]))
+    sentences = list(get_sentences(nlp, text).sents)
+    
+    parse_sentence(sentences)
 
 
     # words = [] # strings of the tokens
