@@ -22,8 +22,10 @@ from spacy.pipeline.dep_parser import DEFAULT_PARSER_MODEL # for sentence parsin
 
 
 def getSentences(nlp, text):
-    # spaCy model
-    return doc = nlp(text)
+    config = {"punct_chars": None}
+    nlp.add_pipe("sentencizer", config=config)
+    
+    return nlp(text)
 
 
 def parseSentence():
@@ -39,11 +41,21 @@ def wordmap():
 
     nlp = spacy.load('en_core_web_lg')
 
-    text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
+    # text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
 
-    
-    sentences = getSentences(nlp, text)
-    print(type(sentences))
+    text = '''You are about to embark on an exciting adventure in natural language processing (NLP).
+First we show you what NLP is and all the things you can do with it.
+This will get your wheels turning, helping you think of ways to use NLP in your own life both at work and at home.
+
+Then we dig into the details of exactly how to process a small bit of English text using a programming language like Python, which will help you build up your NLP toolbox incrementally.
+In this chapter you'll write your first program that can read and write English statements.
+This Python snippet will be the first of many you'll use to learn all the tricks needed to assemble an English language dialog engine -- a chatbot.
+
+== Natural language vs. programming language'''
+
+    sentences = list(getSentences(nlp, text).sents)
+    print(type(sentences[0]))
+
 
     # words = [] # strings of the tokens
 
