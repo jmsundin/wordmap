@@ -25,11 +25,20 @@ def get_sentences(nlp, text):
     config = {"punct_chars": None}
     nlp.add_pipe("sentencizer", config=config)
     
-    return nlp(text)
+    document = nlp(text)
+    return [str(sentence).strip() for sentence in document.sents]
 
 
-def parse_sentence(sentences):
+def parse_sentence(nlp, sentences):
+    head = ''
+    relation = ''
+    tail = ''
+
+
     for sentence in sentences:
+        
+
+    return []
 
 
 def show_graph():
@@ -54,9 +63,10 @@ This Python snippet will be the first of many you'll use to learn all the tricks
 
 == Natural language vs. programming language'''
 
-    sentences = list(get_sentences(nlp, text).sents)
+    # returns a list of sentences with str type
+    sentences = get_sentences(nlp, text)
     
-    parse_sentence(sentences)
+    dependencies = parse_sentence(nlp, sentences)
 
 
     # words = [] # strings of the tokens
