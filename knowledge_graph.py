@@ -18,7 +18,7 @@ import mpld3 # adds interactivity to the scatter plot
 from sklearn.cluster import KMeans # unsupervised learning K-means model to cluster word embeddings
 from openTSNE import TSNE # for dimensionality reduction of the 300 dimension word embeddings to 2 dimensions
 from spacy.pipeline.dep_parser import DEFAULT_PARSER_MODEL # for sentence parsing
-
+from spacy.matcher import Matcher
 
 
 def get_sentences(nlp, text):
@@ -34,10 +34,10 @@ def parse_sentence(nlp, sentences):
     relation = ''
     tail = ''
 
-
+    parser_obj = nlp.add_pipe("parser")
+    parsed = parser_obj(sentences)
     for sentence in sentences:
-        
-
+        pass
     return []
 
 
@@ -54,14 +54,12 @@ def wordmap():
     # text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
 
     text = '''You are about to embark on an exciting adventure in natural language processing (NLP).
-First we show you what NLP is and all the things you can do with it.
-This will get your wheels turning, helping you think of ways to use NLP in your own life both at work and at home.
-
-Then we dig into the details of exactly how to process a small bit of English text using a programming language like Python, which will help you build up your NLP toolbox incrementally.
-In this chapter you'll write your first program that can read and write English statements.
-This Python snippet will be the first of many you'll use to learn all the tricks needed to assemble an English language dialog engine -- a chatbot.
-
-== Natural language vs. programming language'''
+            First we show you what NLP is and all the things you can do with it.
+            This will get your wheels turning, helping you think of ways to use NLP in your own life both at work and at home.
+            Then we dig into the details of exactly how to process a small bit of English text using a programming language like Python, which will help you build up your NLP toolbox incrementally.
+            In this chapter you'll write your first program that can read and write English statements.
+            This Python snippet will be the first of many you'll use to learn all the tricks needed to assemble an English language dialog engine -- a chatbot.
+            == Natural language vs. programming language'''
 
     # returns a list of sentences with str type
     sentences = get_sentences(nlp, text)
