@@ -1,4 +1,4 @@
-# Wordmap Current Status:
+# Knowledge graph current status:
 # - Graph of clustered word embeddings with hoverover text popup
 # - Using spaCy to parse and tokenize text.
 # - Using spaCy to get word vectors/embeddings for each of the unique words in my text.
@@ -44,7 +44,7 @@ def parse_sentence(nlp, sentences):
 def show_graph():
     pass
 
-def wordmap():
+def knowledge_graph():
 
     # English core web medium model
     # nlp = spacy.load('en_core_web_md')
@@ -146,4 +146,4 @@ def wordmap():
 
 
 if __name__ == '__main__':
-    wordmap()
+    knowledge_graph()

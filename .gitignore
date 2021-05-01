@@ -1,0 +1,5 @@
+# Ignore ascii files
+*.asc
+
+# Ignore ipynb checkpoints folder
+.ipynb_checkpoints
