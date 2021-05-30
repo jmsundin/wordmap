@@ -1,20 +1,12 @@
-# Knowledge graph current status:
-# - Graph of clustered word embeddings with hoverover text popup
-# - Using spaCy to parse and tokenize text.
-# - Using spaCy to get word vectors/embeddings for each of the unique words in my text.
-# - Clustering is performed on the word vectors using Kmeans clustering to "classify" the words.
-#     - "Similar" words have the same color.
-
-# **spaCy api -- Architecture**
-# - [spaCy api link](https://spacy.io/api)
-
-
+import time
+import sys
 import spacy # for parsing text and word embeddings
 import pandas as pd # for DataFrame data structure
 import numpy as np # for numpy.array data structure
 import networkx as nx # Graph library
 import matplotlib.pyplot as plt # for scatter plot
 import mpld3 # adds interactivity to the scatter plot
+
 from sklearn.cluster import KMeans # unsupervised learning K-means model to cluster word embeddings
 from openTSNE import TSNE # for dimensionality reduction of the 300 dimension word embeddings to 2 dimensions
 from spacy.pipeline.dep_parser import DEFAULT_PARSER_MODEL # for sentence parsing
@@ -25,7 +17,14 @@ def get_sentences(nlp, text):
     config = {"punct_chars": None}
     nlp.add_pipe("sentencizer", config=config)
     
+    start_time_create_doc = time.time()
+    
     document = nlp(text)
+    
+    end_time_create_doc = time.time()
+    
+    print("Amount of time to create doc object from text input: ", end_time_create_doc - start_time_create_doc)
+    
     return [str(sentence).strip() for sentence in document.sents]
 
 
@@ -44,27 +43,10 @@ def parse_sentence(nlp, sentences):
 def show_graph():
     pass
 
+
 def knowledge_graph():
-
-    # English core web medium model
-    # nlp = spacy.load('en_core_web_md')
-
-    nlp = spacy.load('en_core_web_lg')
-
-    # text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
-
-    text = '''You are about to embark on an exciting adventure in natural language processing (NLP).
-            First we show you what NLP is and all the things you can do with it.
-            This will get your wheels turning, helping you think of ways to use NLP in your own life both at work and at home.
-            Then we dig into the details of exactly how to process a small bit of English text using a programming language like Python, which will help you build up your NLP toolbox incrementally.
-            In this chapter you'll write your first program that can read and write English statements.
-            This Python snippet will be the first of many you'll use to learn all the tricks needed to assemble an English language dialog engine -- a chatbot.
-            == Natural language vs. programming language'''
-
-    # returns a list of sentences with str type
-    sentences = get_sentences(nlp, text)
-    
-    dependencies = parse_sentence(nlp, sentences)
+    pass
+    # dependencies = parse_sentence(nlp, sentences)
 
 
     # words = [] # strings of the tokens
@@ -73,13 +55,13 @@ def knowledge_graph():
     #     if token.is_alpha:
     #         words.append(token.text)
 
-    # # Create a sorted list of unique words with set()
+    # Create a sorted list of unique words with set()
     # words = sorted(set(words))
     # print(len(words))
     # print('Create a sorted list of unique words with set()')
 
 
-    # # Create Token objects of the words list to create word vectors/embeddings
+    # Create Token objects of the words list to create word vectors/embeddings
     # tokens = []
     # for word in words:
     #     tokens.append(nlp(word)[0])
@@ -87,7 +69,7 @@ def knowledge_graph():
     # print(len(tokens))
     # print('Create Token objects of the words list to create word vectors/embeddings')
 
-    # # Create word vectors/embeddings from the Token objects
+    # Create word vectors/embeddings from the Token objects
     # vectors = []
     # for token in tokens:
     #     vectors.append(token.vector)
@@ -95,11 +77,11 @@ def knowledge_graph():
     # print('Create word vectors/embeddings from the Token objects')
 
 
-    # # cast the vector list to a numpy array to use in the DataFrame
+    # cast the vector list to a numpy array to use in the DataFrame
     # vectors = np.array(vectors)
 
 
-    # # dimensionality reduction of the word vectors/embeddings
+    # dimensionality reduction of the word vectors/embeddings
     # tsne = TSNE(
     #     perplexity=50,
     #     #metric="cosine",
@@ -146,4 +128,29 @@ def knowledge_graph():
 
 
 if __name__ == '__main__':
-    knowledge_graph()
+    # English core web medium model
+    # nlp = spacy.load('en_core_web_md')
+
+    start_time_load_model = time.time()
+
+    # Load the English core web large model
+    nlp = spacy.load('en_core_web_lg')
+
+    end_time_load_model = time.time()
+    
+    print("Loading English large model time: ", end_time_load_model - start_time_load_model)
+
+    # open and read ascii document
+    text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
+
+    start_time_get_sentences = time.time()
+
+    # returns a list of sentences with str type
+    sentences = get_sentences(nlp, text)
+
+    end_time_get_sentences = time.time()
+
+    print("Time for get_sentences function: ", end_time_get_sentences - start_time_get_sentences)
+    print("Sentences MB: ", sys.getsizeof(sentences)/1024)
+
+    # knowledge_graph()
