@@ -39,15 +39,48 @@ def parse_sentence(nlp, sentences):
     return []
 
 
-def show_graph():
-    pass
+def dimension_reduction(vectors):
+    tsne = TSNE(
+        perplexity=50,
+        #metric="cosine",
+        verbose=True,
+        n_jobs=-2,
+        random_state=42,
+        dof=0.5
+    )
+
+    return tsne.fit(vectors) # returns word vectors/embeddings
+
+
+def clustering(embeddings):
+    kmeans = KMeans(n_clusters=8)
+    kmeans.fit(embeddings)
+    print('kmeans algorithm trained')
+
+    # y = kmeans.predict(df.values)
+    y = kmeans.predict(embeddings)
+    print('kmeans classification made')
+    
+    return y
+
+
+def plot(df, y):
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(x=df[0], y=df[1], c=y, alpha=0.5)
+    ax.grid(color='grey', linestyle='solid')
+    ax.set_title("Wordmap")
+    labels = words
+    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
+    mpld3.plugins.connect(fig, tooltip)
+
+    # Use this method in jupyter notebook
+    #mpld3.display()
+
+    # Use this method if you are not using jupyter notebook
+    mpld3.show() 
 
 
 def main():
-    
-    dependencies = parse_sentence(nlp, sentences)
-
-
     words = [] # strings of the tokens
 
     for token in doc:
@@ -75,76 +108,34 @@ def main():
 
     print('Create word vectors/embeddings from the Token objects')
 
-
     # type cast the vector list to a numpy array to use in the DataFrame
     vectors = np.array(vectors)
 
-
-    # dimensionality reduction of the word vectors/embeddings
-    tsne = TSNE(
-        perplexity=50,
-        #metric="cosine",
-        verbose=True,
-        n_jobs=-2,
-        random_state=42,
-        dof=0.5
-    )
-    print('tsne object created')
-
-    embeddings = tsne.fit(vectors)
-    print('Embeddings: ', len(embeddings))
-    print('Words: ', len(words))
-
-    kmeans = KMeans(n_clusters=8)
-    kmeans.fit(embeddings)
-    print('kmeans algorithm trained')
-
-    # y = kmeans.predict(df.values)
-    y = kmeans.predict(embeddings)
-    print('kmeans classification made')
+    embeddings = dimension_reduction(vectors)
+    
+    y = clustering(embeddings)
 
     # Making the data pretty
     coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
 
-
-    df = pd.DataFrame(coordinates, index=words)
-    #df
-
-    # Scatter plot
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(x=df[0], y=df[1], c=y, alpha=0.5)
-    ax.grid(color='grey', linestyle='solid')
-    ax.set_title("Wordmap")
-    labels = words
-    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
-    mpld3.plugins.connect(fig, tooltip)
-
-    # Use this method in jupyter notebook
-    #mpld3.display()
-
-    # Use this method if you are not using jupyter notebook
-    mpld3.show() 
+    plot(pd.DataFrame(coordinates, index=words), y)
 
 
 if __name__ == '__main__':
-    # English core web medium model
-    # nlp = spacy.load('en_core_web_md')
+    # nlp = spacy.load('en_core_web_md') # English core web medium model
 
     start_time_load_model = time.time()
-    # Load the English core web large model
-    nlp = spacy.load('en_core_web_lg')
+    nlp = spacy.load('en_core_web_lg') # Load the English core web large model
     end_time_load_model = time.time()
     print("Loading English large model time: ", end_time_load_model - start_time_load_model)
 
-    # open and read ascii document
+    # document
     text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
 
     start_time_get_sentences = time.time()
-    # returns a list of sentences with str type
-    sentences = get_sentences(nlp, text)
+    sentences = get_sentences(nlp, text) # returns a list of sentences with str type
     end_time_get_sentences = time.time()
     print("Time for get_sentences function: ", end_time_get_sentences - start_time_get_sentences)
-    
     print("Sentences MB: ", sys.getsizeof(sentences)/1024)
 
     main()
