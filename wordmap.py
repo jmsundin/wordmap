@@ -34,16 +34,6 @@ def parse_sentences(nlp, sentences):
     
     return words
 
-<<<<<<< HEAD
-def dimension_reduction(vectors):
-    tsne = TSNE(
-        perplexity=50,
-        #metric="cosine",
-        verbose=True,
-        n_jobs=-2,
-        random_state=42,
-        dof=0.5
-=======
 
 def get_word_vectors(nlp, words):
     tokens = [nlp(word) for word in words]
@@ -57,7 +47,6 @@ def dimension_reduction(vectors):
         n_jobs=-1, # tsne uses all processors; -2 will use all but one processor
         random_state=42, # int used as seed for random number generator
         dof=0.5 # degrees of freedom
->>>>>>> dev
     )
 
     return tsne.fit(vectors) # returns word vectors/embeddings
@@ -66,18 +55,6 @@ def dimension_reduction(vectors):
 def clustering(embeddings):
     kmeans = KMeans(n_clusters=8)
     kmeans.fit(embeddings)
-<<<<<<< HEAD
-    print('kmeans algorithm trained')
-
-    # y = kmeans.predict(df.values)
-    y = kmeans.predict(embeddings)
-    print('kmeans classification made')
-    
-    return y
-
-
-def plot(df, y):
-=======
     print('KMeans trained')
 
     # y = kmeans.predict(df.values)
@@ -88,16 +65,11 @@ def plot(df, y):
 
 
 def plot(df, sorted_words, y):
->>>>>>> dev
     fig, ax = plt.subplots()
     scatter = ax.scatter(x=df[0], y=df[1], c=y, alpha=0.5)
     ax.grid(color='grey', linestyle='solid')
     ax.set_title("Wordmap")
-<<<<<<< HEAD
-    labels = words
-=======
     labels = sorted_words
->>>>>>> dev
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
     mpld3.plugins.connect(fig, tooltip)
 
@@ -109,41 +81,6 @@ def plot(df, sorted_words, y):
 
 
 def main():
-<<<<<<< HEAD
-    words = [] # strings of the tokens
-
-    for token in doc:
-        if token.is_alpha:
-            words.append(token.text)
-
-    # Create a sorted list of unique words with set()
-    words = sorted(set(words))
-    print(len(words))
-    print('Create a sorted list of unique words with set()')
-
-
-    # Create Token objects of the words list to create word vectors/embeddings
-    tokens = []
-    for word in words:
-        tokens.append(nlp(word)[0])
-        
-    print(len(tokens))
-    print('Create Token objects of the words list to create word vectors/embeddings')
-
-    # Create word vectors/embeddings from the Token objects
-    vectors = []
-    for token in tokens:
-        vectors.append(token.vector)
-
-    print('Create word vectors/embeddings from the Token objects')
-
-    # type cast the vector list to a numpy array to use in the DataFrame
-    vectors = np.array(vectors)
-
-    embeddings = dimension_reduction(vectors)
-    
-    y = clustering(embeddings)
-=======
     # nlp = spacy.load('en_core_web_md') # English core web medium model
 
     print("Loading spaCy language model")
@@ -194,37 +131,13 @@ def main():
     y = clustering(embeddings)
     end_time_clustering = time.time()
     print("Time for KMeans: ", end_time_clustering - start_time_clustering)
->>>>>>> dev
 
     # Making the data pretty
     coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
 
-<<<<<<< HEAD
-    plot(pd.DataFrame(coordinates, index=words), y)
-
-
-if __name__ == '__main__':
-    # nlp = spacy.load('en_core_web_md') # English core web medium model
-
-    start_time_load_model = time.time()
-    nlp = spacy.load('en_core_web_lg') # Load the English core web large model
-    end_time_load_model = time.time()
-    print("Loading English large model time: ", end_time_load_model - start_time_load_model)
-
-    # document
-    text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
-
-    start_time_get_sentences = time.time()
-    sentences = get_sentences(nlp, text) # returns a list of sentences with str type
-    end_time_get_sentences = time.time()
-    print("Time for get_sentences function: ", end_time_get_sentences - start_time_get_sentences)
-    print("Sentences MB: ", sys.getsizeof(sentences)/1024)
-
-=======
     print("Plotting word vectors")
     plot(pd.DataFrame(coordinates, index=sorted_words), sorted_words, y)
 
 
 if __name__ == '__main__':
->>>>>>> dev
     main()
