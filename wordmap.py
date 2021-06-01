@@ -3,14 +3,13 @@ import sys
 import spacy # for parsing text and word embeddings
 import pandas as pd # for DataFrame data structure
 import numpy as np # for numpy.array data structure
-import networkx as nx # Graph library
 import matplotlib.pyplot as plt # for scatter plot
 import mpld3 # adds interactivity to the scatter plot
 
-from sklearn.cluster import KMeans # unsupervised learning K-means model to cluster word embeddings
-from openTSNE import TSNE # for dimensionality reduction of the 300 dimension word embeddings to 2 dimensions
 from spacy.pipeline.dep_parser import DEFAULT_PARSER_MODEL # for sentence parsing
 from spacy.matcher import Matcher
+from sklearn.cluster import KMeans # unsupervised learning K-means model to cluster word embeddings
+from openTSNE import TSNE # for dimensionality reduction of the 300 dimension word embeddings to 2 dimensions
 
 
 def get_sentences(nlp, text):
