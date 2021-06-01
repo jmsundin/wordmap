@@ -17,28 +17,24 @@ def get_sentences(nlp, text):
     nlp.add_pipe("sentencizer", config=config)
     
     start_time_create_doc = time.time()
-    
     document = nlp(text)
-    
     end_time_create_doc = time.time()
-    
     print("Amount of time to create doc object from text input: ", end_time_create_doc - start_time_create_doc)
     
     return [str(sentence).strip() for sentence in document.sents]
 
 
-def parse_sentence(nlp, sentences):
-    head = ''
-    relation = ''
-    tail = ''
-
-    parser_obj = nlp.add_pipe("parser")
-    parsed = parser_obj(sentences)
+def parse_sentences(nlp, sentences):
+    words = []
     for sentence in sentences:
-        pass
-    return []
+        for word in sentence.split():
+            token = nlp(word)[0] # nlp(word) returns a Doc object. Then access the first token.
+            if token.is_alpha:
+                words.append(token.text)
+    
+    return words
 
-
+<<<<<<< HEAD
 def dimension_reduction(vectors):
     tsne = TSNE(
         perplexity=50,
@@ -47,6 +43,21 @@ def dimension_reduction(vectors):
         n_jobs=-2,
         random_state=42,
         dof=0.5
+=======
+
+def get_word_vectors(nlp, words):
+    tokens = [nlp(word) for word in words]
+    return [token.vector for token in tokens]
+
+def dimension_reduction(vectors):
+    tsne = TSNE(
+        perplexity=50, # can be thought of as the continuous k number of nearest neighbors
+        #metric="cosine",
+        verbose=True,
+        n_jobs=-1, # tsne uses all processors; -2 will use all but one processor
+        random_state=42, # int used as seed for random number generator
+        dof=0.5 # degrees of freedom
+>>>>>>> dev
     )
 
     return tsne.fit(vectors) # returns word vectors/embeddings
@@ -55,6 +66,7 @@ def dimension_reduction(vectors):
 def clustering(embeddings):
     kmeans = KMeans(n_clusters=8)
     kmeans.fit(embeddings)
+<<<<<<< HEAD
     print('kmeans algorithm trained')
 
     # y = kmeans.predict(df.values)
@@ -65,11 +77,27 @@ def clustering(embeddings):
 
 
 def plot(df, y):
+=======
+    print('KMeans trained')
+
+    # y = kmeans.predict(df.values)
+    y = kmeans.predict(embeddings)
+    print('KMeans clustering complete')
+    
+    return y 
+
+
+def plot(df, sorted_words, y):
+>>>>>>> dev
     fig, ax = plt.subplots()
     scatter = ax.scatter(x=df[0], y=df[1], c=y, alpha=0.5)
     ax.grid(color='grey', linestyle='solid')
     ax.set_title("Wordmap")
+<<<<<<< HEAD
     labels = words
+=======
+    labels = sorted_words
+>>>>>>> dev
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
     mpld3.plugins.connect(fig, tooltip)
 
@@ -81,6 +109,7 @@ def plot(df, y):
 
 
 def main():
+<<<<<<< HEAD
     words = [] # strings of the tokens
 
     for token in doc:
@@ -114,10 +143,63 @@ def main():
     embeddings = dimension_reduction(vectors)
     
     y = clustering(embeddings)
+=======
+    # nlp = spacy.load('en_core_web_md') # English core web medium model
+
+    print("Loading spaCy language model")
+    start_time_load_model = time.time()
+    nlp = spacy.load('en_core_web_lg') # Load the English core web large model
+    end_time_load_model = time.time()
+    print("Loading English large model time: ", end_time_load_model - start_time_load_model)
+
+    print("Opening and reading document")
+    start_time_read_doc = time.time()
+    text = open('Chapter 01 -- Packets of Thought (NLP Overview).asc', 'r').read()
+    end_time_read_doc = time.time()
+    print("Time to open and read input stream: ", end_time_read_doc - start_time_read_doc)
+
+    print("Getting sentences")
+    start_time_get_sentences = time.time()
+    sentences = get_sentences(nlp, text) # returns a list of sentences with str type
+    end_time_get_sentences = time.time()
+    print("Time for get_sentences function: ", end_time_get_sentences - start_time_get_sentences)
+    print("Sentences MB: ", sys.getsizeof(sentences)/1024)
+    
+    print("Parsing sentences")
+    start_time_parsing = time.time()
+    words = parse_sentences(nlp, sentences) # returns list
+    end_time_parsing = time.time()
+    print("Time for parsing sentences: ", end_time_parsing - start_time_parsing)
+
+    # Create a sorted list of unique words with set()
+    sorted_words = sorted(set(words))
+
+    print("Getting word vectors")
+    start_time_get_vectors = time.time()
+    vectors = get_word_vectors(nlp, sorted_words)
+    end_time_get_vectors = time.time()
+    print("Time to get vectors: ", end_time_get_vectors - start_time_get_vectors)
+
+    # type cast the vector list to a numpy array to use in the DataFrame
+    np_array_vectors = np.array(vectors)
+
+    print("Starting TSNE")
+    start_time_tsne = time.time()
+    embeddings = dimension_reduction(np_array_vectors)
+    end_time_tsne = time.time()
+    print("Time for TSNE: ", end_time_tsne - start_time_tsne)
+
+    print("Starting KMeans")
+    start_time_clustering = time.time()
+    y = clustering(embeddings)
+    end_time_clustering = time.time()
+    print("Time for KMeans: ", end_time_clustering - start_time_clustering)
+>>>>>>> dev
 
     # Making the data pretty
     coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
 
+<<<<<<< HEAD
     plot(pd.DataFrame(coordinates, index=words), y)
 
 
@@ -138,4 +220,11 @@ if __name__ == '__main__':
     print("Time for get_sentences function: ", end_time_get_sentences - start_time_get_sentences)
     print("Sentences MB: ", sys.getsizeof(sentences)/1024)
 
+=======
+    print("Plotting word vectors")
+    plot(pd.DataFrame(coordinates, index=sorted_words), sorted_words, y)
+
+
+if __name__ == '__main__':
+>>>>>>> dev
     main()
