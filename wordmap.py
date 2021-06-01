@@ -27,26 +27,29 @@ def get_sentences(nlp, text):
     return [str(sentence).strip() for sentence in document.sents]
 
 
-def parse_sentence(nlp, sentences):
-    head = ''
-    relation = ''
-    tail = ''
-
-    parser_obj = nlp.add_pipe("parser")
-    parsed = parser_obj(sentences)
+def parse_sentences(nlp, sentences):
+    words = []
     for sentence in sentences:
-        pass
-    return []
+        for word in sentence.split():
+            token = nlp(word)[0] # nlp(word) returns a Doc object. Then access the first token.
+            if token.is_alpha:
+                words.append(token.text)
+    
+    return words
 
+
+def get_word_vectors(nlp, words):
+    tokens = [nlp(word) for word in words]
+    return [token.vector for token in tokens]
 
 def dimension_reduction(vectors):
     tsne = TSNE(
-        perplexity=50,
+        perplexity=50, # can be thought of as the continuous k number of nearest neighbors
         #metric="cosine",
         verbose=True,
-        n_jobs=-2,
-        random_state=42,
-        dof=0.5
+        n_jobs=-1, # tsne uses all processors; -2 will use all but one processor
+        random_state=42, # int used as seed for random number generator
+        dof=0.5 # degrees of freedom
     )
 
     return tsne.fit(vectors) # returns word vectors/embeddings
@@ -81,47 +84,6 @@ def plot(df, y):
 
 
 def main():
-    words = [] # strings of the tokens
-
-    for token in doc:
-        if token.is_alpha:
-            words.append(token.text)
-
-    # Create a sorted list of unique words with set()
-    words = sorted(set(words))
-    print(len(words))
-    print('Create a sorted list of unique words with set()')
-
-
-    # Create Token objects of the words list to create word vectors/embeddings
-    tokens = []
-    for word in words:
-        tokens.append(nlp(word)[0])
-        
-    print(len(tokens))
-    print('Create Token objects of the words list to create word vectors/embeddings')
-
-    # Create word vectors/embeddings from the Token objects
-    vectors = []
-    for token in tokens:
-        vectors.append(token.vector)
-
-    print('Create word vectors/embeddings from the Token objects')
-
-    # type cast the vector list to a numpy array to use in the DataFrame
-    vectors = np.array(vectors)
-
-    embeddings = dimension_reduction(vectors)
-    
-    y = clustering(embeddings)
-
-    # Making the data pretty
-    coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
-
-    plot(pd.DataFrame(coordinates, index=words), y)
-
-
-if __name__ == '__main__':
     # nlp = spacy.load('en_core_web_md') # English core web medium model
 
     start_time_load_model = time.time()
@@ -137,5 +99,27 @@ if __name__ == '__main__':
     end_time_get_sentences = time.time()
     print("Time for get_sentences function: ", end_time_get_sentences - start_time_get_sentences)
     print("Sentences MB: ", sys.getsizeof(sentences)/1024)
+    
+    words = parse_sentences(nlp, sentences) # returns list
+    
+    # Create a sorted list of unique words with set()
+    words = sorted(set(words))
 
+    vectors = get_word_vectors(nlp, words)
+
+    # type cast the vector list to a numpy array to use in the DataFrame
+    np_array_vectors = np.array(vectors)
+
+
+    embeddings = dimension_reduction(np_array_vectors)
+    
+    y = clustering(embeddings)
+
+    # Making the data pretty
+    coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
+
+    plot(pd.DataFrame(coordinates, index=words), y)
+
+
+if __name__ == '__main__':
     main()
