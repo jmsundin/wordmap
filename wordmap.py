@@ -47,6 +47,27 @@ def get_word_vectors(nlp, words):
 def cosine_similarity(sentence_vec, word_vec):
     return np.dot(sentence_vec, word_vec)/(np.linalg.norm(sentence_vec)*np.linalg.norm(word_vec))
 
+def get_sentence_vec_label(sentence_vecs, word_vecs, sorted_words):
+    # Using cosine similarity to determine which word vector is most similar
+    # to the sentence vector to then use that word as the label for the
+    # sentence vector
+    sentence_label_dict = {}
+    words_dict = {}
+    updated_sentence_vecs_list = [] # list of sentence vectors that are not zero vectors
+    updated_words_list = [] # list of words with most similarity to given sentence vectors
+    for i, sentence_vec in enumerate(sentence_vecs):
+        # np.any() returns true if vector is not the zero vector
+        if np.any(sentence_vec):
+            for j, word_vec in enumerate(word_vecs):
+                if np.any(word_vec):
+                    words_dict[j] = cosine_similarity(sentence_vec, word_vec)
+            if None not in words_dict:
+                word_index = max(words_dict, key=words_dict.get)
+                updated_sentence_vecs_list.append(sentence_vecs[i])
+                updated_words_list.append(sorted_words[word_index])
+
+    return updated_sentence_vecs_list, updated_words_list
+
 
 def dimension_reduction(vectors):
     tsne = TSNE(
@@ -71,12 +92,12 @@ def clustering(embeddings):
     return y 
 
 
-def plot(df, sorted_words, y):
+def plot(df, updated_words_list, y):
     fig, ax = plt.subplots()
     scatter = ax.scatter(x=df[0], y=df[1], c=y, alpha=0.5)
     ax.grid(color='grey', linestyle='solid')
     ax.set_title('Wordmap')
-    labels = sorted_words
+    labels = updated_words_list
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
     mpld3.plugins.connect(fig, tooltip)
 
@@ -107,7 +128,7 @@ def main():
     print('Loading model time: ', end_time_load_model - start_time_load_model)
 
     print('Getting sentences')
-    sentences = get_sentences(nlp, text[:100]) # returns a list of sentences with Span type (spacy type)
+    sentences = get_sentences(nlp, text) # returns a list of sentences with Span type (spacy type)
     print('Sentences MB: ', sys.getsizeof(sentences)/1024)
     sentence_vecs = get_sentence_vectors(sentences)
 
@@ -120,38 +141,29 @@ def main():
     print('Getting word vectors')
     word_vecs = get_word_vectors(nlp, sorted_words)
 
-    # Using cosine similarity to determine which word vector is most similar
-    # to the sentence vector to then use that word as the label for the
-    # sentence vector
-    words_dict = {}
-    for i, word_vec in enumerate(word_vecs):
-        if np.any(sentence_vecs[1]) and np.any(word_vec): # returns true if both vectors are not zero vectors
-            words_dict[i] = cosine_similarity(sentence_vecs[1], word_vec)
+    updated_sentence_vecs_list, updated_words_list = get_sentence_vec_label(sentence_vecs, word_vecs, sorted_words)
 
-    word_index = max(words_dict, key=words_dict.get)
-    
+    print(updated_words_list)
+    np_array_sent_vecs = np.array(updated_sentence_vecs_list)
 
-    # np_array_sent_vecs = np.array(sentence_vecs)
+    print('Starting TSNE')
+    start_time_tsne = time.time()
+    embeddings = dimension_reduction(np_array_sent_vecs)
+    end_time_tsne = time.time()
+    print('Time for TSNE: ', end_time_tsne - start_time_tsne)
 
+    print('Starting KMeans')
+    start_time_clustering = time.time()
+    y = clustering(embeddings)
+    end_time_clustering = time.time()
+    print('Time for KMeans: ', end_time_clustering - start_time_clustering)
 
+    # Making the data pretty
+    coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
 
-    # print('Starting TSNE')
-    # start_time_tsne = time.time()
-    # embeddings = dimension_reduction(np_array_sent_vecs)
-    # end_time_tsne = time.time()
-    # print('Time for TSNE: ', end_time_tsne - start_time_tsne)
-
-    # print('Starting KMeans')
-    # start_time_clustering = time.time()
-    # y = clustering(embeddings)
-    # end_time_clustering = time.time()
-    # print('Time for KMeans: ', end_time_clustering - start_time_clustering)
-
-    # # Making the data pretty
-    # coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
-
-    # print('Plotting word vectors')
-    # plot(pd.DataFrame(coordinates, index=sorted_words), sorted_words, y)
+    print('Plotting word vectors')
+    df = pd.DataFrame(data=coordinates, index=updated_words_list)
+    plot(df, updated_words_list, y)
 
 
 if __name__ == '__main__':
