@@ -146,6 +146,13 @@ def main():
     print(updated_words_list)
     np_array_sent_vecs = np.array(updated_sentence_vecs_list)
 
+    # create n by 300 normalized sent_vec
+    # similarity_matrix = sent_vec.dot(sent_vec.T) = similarity matrix
+    # assert similarity_matrix.diag == 1 -> .diag returns matrix of diagonal
+    # thresholds -> .9 or .8 -> create new tuple of all rows that pass this
+    # sklearn -> unsupervised learning clustering
+
+
     print('Starting TSNE')
     start_time_tsne = time.time()
     embeddings = dimension_reduction(np_array_sent_vecs)
