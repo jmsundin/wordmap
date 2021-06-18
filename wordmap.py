@@ -14,14 +14,14 @@ from sklearn.cluster import KMeans
 from openTSNE import TSNE
 
 
-def get_sentences(nlp, text):
+def get_sents(nlp: spacy.language.Language, text: str) -> list:
     config = {'punct_chars': None}
     nlp.add_pipe('sentencizer', config=config)
     document = nlp(text)
     return [sentence for sentence in document.sents]
 
 
-def parse_sentences(sentences):
+def parse_sents(sentences: list) -> list:
     words = []
     for sentence in sentences:
         for token in sentence:
@@ -31,23 +31,30 @@ def parse_sentences(sentences):
     return words
 
 
-def get_sentence_vectors(sentences):
-    sentence_vecs = []
+def get_sent_vecs(sentences: list) -> list:
+    sent_vecs = []
     for sent in sentences:
-        sentence_vecs.append(sent.vector)
+        sent_vecs.append(sent.vector)
     
-    return sentence_vecs
+    return sent_vecs
 
 
-def get_word_vectors(nlp, words):
+def get_word_vecs(nlp: spacy.language.Language, words: list) -> np.array:
     tokens = [nlp(word) for word in words]
     return np.array([token.vector for token in tokens])
 
 
-def cosine_similarity(sentence_vec, word_vec):
-    return np.dot(sentence_vec, word_vec)/(np.linalg.norm(sentence_vec)*np.linalg.norm(word_vec))
+def get_vec_norm(sent_vecs: list) -> np.array:
+    for i, sent in enumerate(sent_vecs):
+        sent_vecs[i] = np.linalg.norm(sent)
 
-def get_sentence_vec_label(sentence_vecs, word_vecs, sorted_words):
+    return np.array(sent_vecs)
+
+
+def cos_similarity(sent_vec: list, word_vec: list) -> int:
+    return np.dot(sent_vec, word_vec)/(np.linalg.norm(sent_vec)*np.linalg.norm(word_vec))
+
+def get_sent_vec_label(sent_vecs: list, word_vecs: list, sorted_words: list) -> list:
     # Using cosine similarity to determine which word vector is most similar
     # to the sentence vector to then use that word as the label for the
     # sentence vector
@@ -69,7 +76,7 @@ def get_sentence_vec_label(sentence_vecs, word_vecs, sorted_words):
     return updated_sentence_vecs_list, updated_words_list
 
 
-def dimension_reduction(vectors):
+def dim_reduc(vecs: list) -> list:
     tsne = TSNE(
         perplexity=50, # can be thought of as the continuous k number of nearest neighbors
         #metric='cosine',
@@ -81,20 +88,20 @@ def dimension_reduction(vectors):
     return tsne.fit(vectors) # returns word vectors/embeddings
 
 
-def clustering(embeddings):
+def clustering(embeddings: list) -> np.ndarray:
     kmeans = KMeans(n_clusters=8)
     kmeans.fit(embeddings)
     print('KMeans trained')
 
-    # y = kmeans.predict(df.values)
-    y = kmeans.predict(embeddings)
+    # cluster_array = kmeans.predict(df.values)
+    cluster_array = kmeans.predict(embeddings)
     print('KMeans clustering complete')
-    return y 
+    return cluster_array
 
 
-def plot(df, updated_words_list, y):
+def plot(df: pd.DataFrame, updated_words_list: list, cluster_array: np.ndarray) -> None:
     fig, ax = plt.subplots()
-    scatter = ax.scatter(x=df[0], y=df[1], c=y, alpha=0.5)
+    scatter = ax.scatter(x=df[0], y=df[1], c=cluster_array, alpha=0.5)
     ax.grid(color='grey', linestyle='solid')
     ax.set_title('Wordmap')
     labels = updated_words_list
@@ -128,25 +135,29 @@ def main():
     print('Loading model time: ', end_time_load_model - start_time_load_model)
 
     print('Getting sentences')
-    sentences = get_sentences(nlp, text) # returns a list of sentences with Span type (spacy type)
+    sentences = get_sents(nlp, text) # returns a list of sentences with Span type (spacy type)
     print('Sentences MB: ', sys.getsizeof(sentences)/1024)
-    sentence_vecs = get_sentence_vectors(sentences)
+    sent_vecs = get_sent_vecs(sentences)
 
     print('Parsing sentences')
-    words = parse_sentences(sentences) # returns list of Token type
+    words = parse_sents(sentences) # returns list of Token type
     
     # Create a sorted list of unique words with set()
     sorted_words = sorted(set(words))
 
     print('Getting word vectors')
-    word_vecs = get_word_vectors(nlp, sorted_words)
+    word_vecs = get_word_vecs(nlp, sorted_words)
 
-    updated_sentence_vecs_list, updated_words_list = get_sentence_vec_label(sentence_vecs, word_vecs, sorted_words)
+    updated_sent_vecs_list, updated_words_list = get_sent_vec_label(sent_vecs, word_vecs, sorted_words)
 
     print(updated_words_list)
-    np_array_sent_vecs = np.array(updated_sentence_vecs_list)
+    np_array_sent_vecs = np.array(updated_sent_vecs_list)
 
     # create n by 300 normalized sent_vec
+    np_array_norm_sent_vecs = get_sent_vecs(sent_vecs)
+    
+    similarity_matrix = get_similarity_matrix(np_array_norm_sent_vecs)
+    
     # similarity_matrix = sent_vec.dot(sent_vec.T) = similarity matrix
     # assert similarity_matrix.diag == 1 -> .diag returns matrix of diagonal
     # thresholds -> .9 or .8 -> create new tuple of all rows that pass this
@@ -155,13 +166,13 @@ def main():
 
     print('Starting TSNE')
     start_time_tsne = time.time()
-    embeddings = dimension_reduction(np_array_sent_vecs)
+    embeddings = dim_red(np_array_sent_vecs)
     end_time_tsne = time.time()
     print('Time for TSNE: ', end_time_tsne - start_time_tsne)
 
     print('Starting KMeans')
     start_time_clustering = time.time()
-    y = clustering(embeddings)
+    cluster_array = clustering(embeddings)
     end_time_clustering = time.time()
     print('Time for KMeans: ', end_time_clustering - start_time_clustering)
 
@@ -170,7 +181,7 @@ def main():
 
     print('Plotting word vectors')
     df = pd.DataFrame(data=coordinates, index=updated_words_list)
-    plot(df, updated_words_list, y)
+    plot(df, updated_words_list, cluster_array)
 
 
 if __name__ == '__main__':
