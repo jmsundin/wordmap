@@ -6,6 +6,7 @@ import os.path
 import spacy
 import pandas as pd
 import numpy as np
+import networkx as nx
 import matplotlib.pyplot as plt
 import mpld3 # makes the plot interactive
 
@@ -45,7 +46,9 @@ def parse_sents(sentences: list) -> list:
 def get_sent_vecs(sentences: list) -> list:
     sent_vecs = []
     for sent in sentences:
-        sent_vecs.append(sent.vector)
+        sent_vec = sent.vector
+        if not (0.0 in sent_vec or 0. in sent_vec):
+            sent_vecs.append(sent_vec)
     return sent_vecs
 
 
@@ -54,9 +57,9 @@ def get_word_vecs(nlp: spacy.language.Language, words: list) -> np.array:
     return np.array([token.vector for token in tokens])
 
 
-def get_vec_norm(sent_vecs: list) -> np.array:
-    for i, sent in enumerate(sent_vecs):
-        sent_vecs[i] = np.linalg.norm(sent)
+def get_sent_vec_norm(sent_vecs: list) -> np.array:
+    for i, sent_vec in enumerate(sent_vecs):
+        sent_vecs[i] = sent_vec / np.linalg.norm(sent_vec) # 2-norm is default with vectors
     return np.array(sent_vecs)
 
 
@@ -112,7 +115,25 @@ def clustering(embeddings: list) -> np.ndarray:
     return cluster_array
 
 
-def plot(df: pd.DataFrame, updated_words_list: list, cluster_array: np.ndarray) -> None:
+def create_adj_graph(adjacency_matrix: np.ndarray, G: nx.Graph) -> None:
+    i = 0
+    diagonal = 0
+    for i in range(0, len(adjacency_matrix[i])):
+        for j, edge in enumerate(adjacency_matrix[i]):
+            if edge:
+                if not j <= diagonal:
+                    # print(f'Adding edge ({i}, {j})')
+                    G.add_edge(i, j)   
+        diagonal += 1
+
+
+def plot_adj_graph(G: nx.Graph) -> None:
+    plt.subplot(111)
+    nx.draw_networkx(G, pos=None, arrows=None, with_labels=True)
+    plt.show()
+
+
+def plot_word_cloud(df: pd.DataFrame, updated_words_list: list, cluster_array: np.ndarray) -> None:
     fig, ax = plt.subplots()
     scatter = ax.scatter(x=df[0], y=df[1], c=cluster_array, alpha=0.5)
     ax.grid(color='grey', linestyle='solid')
@@ -129,21 +150,30 @@ def plot(df: pd.DataFrame, updated_words_list: list, cluster_array: np.ndarray) 
 
 
 def main():
-    file_name = 'Chapter 06 -- Reasoning with Word Vectors (Word2vec).html'
-    if not os.path.exists(file_name):
+    chap6_word_vecs_html = 'Chapter 06 -- Reasoning with Word Vectors (Word2vec).html'
+    sent_vecs_npy = 'sentence_vectors.npy'
+
+    if not os.path.exists(chap6_word_vecs_html):
         print('Running asciidoc3')
         try:
             subprocess.run(args=['asciidoc3', '-a', 'toc', '-n', '-a', 'icons', 'Chapter 06 -- Reasoning with Word Vectors (Word2vec).adoc'])
         except SubprocessError as e:
             print('Error trying to run asciidoc3: ', e)
     
-    if os.path.exists(file_name):
+    if os.path.exists(chap6_word_vecs_html):
         mode_r = 'r'
-        chapter6_html = open(file_name, mode_r).read()
+        chapter6_html = open(chap6_word_vecs_html, mode_r).read()
         bsoup = BeautifulSoup(chapter6_html, 'html.parser')
         text = bsoup.get_text()
 
-    if not os.path.exists('sentence_vectors.npy'):
+    if os.path.exists(sent_vecs_npy):
+        # reading sentence vectors from file
+        mode_r = 'rb'
+        np_array_sent_vecs_norm = read_write(sent_vecs_npy, mode_r)
+        # print('sentence_vectors.npy: ', np_array_sent_vecs_norm[:10])
+        print('Number of sentence vectors: ', len(np_array_sent_vecs_norm))
+
+    if not os.path.exists(sent_vecs_npy):
         print('Loading spaCy language model')
         start_time_load_model = time.time()
         nlp = spacy.load('en_core_web_md') # English core web medium model
@@ -153,21 +183,14 @@ def main():
         
         print('Getting sentences')
         sentences = get_sents(nlp, text) # returns a list of sentences with Span type (spacy type)
+        print('Number of sentences: ', len(sentences))
         print('Sentences MB: ', sys.getsizeof(sentences)/1024)
-        sent_vecs = get_sent_vecs(sentences)
-        print(sent_vecs[:2])
+
+        np_array_sent_vecs_norm = get_sent_vec_norm(get_sent_vecs(sentences))
 
         # writing sentence vectors to file
-        file_name = 'sentence_vectors.npy'
         mode_w = 'wb'
-        read_write(file_name, mode_w, sent_vecs)
-    
-
-    # reading sentence vectors from file
-    file_name = 'sentence_vectors.npy'
-    mode_r = 'rb'
-    sent_vecs = read_write(file_name, mode_r)
-    print('sentence_vectors.npy: ', sent_vecs[:2])
+        read_write(sent_vecs_npy, mode_w, np_array_sent_vecs_norm)
 
     # print('Parsing sentences')
     # words = parse_sents(sentences) # returns list of Token type
@@ -181,24 +204,22 @@ def main():
     # updated_sent_vecs_list, updated_words_list = get_sent_vec_label(sent_vecs, word_vecs, sorted_words)
 
     # print(updated_words_list)
-
-    # create n by 300 normalized sent_vec
-    np_array_sent_vecs_norm = get_vec_norm(sent_vecs)
-    print('Normalized sent vecs: ', np_array_sent_vecs_norm[:2])
-    
+  
     similarity_matrix = get_similarity_matrix(np_array_sent_vecs_norm)
-    print('Similarity matrix: ', similarity_matrix[:10])
+    # print('Similarity matrix: ', similarity_matrix[:10])
 
-    # similarity_matrix = sent_vec.dot(sent_vec.T) = similarity matrix
-    # thresholds -> .9 or .8 -> create new tuple of all rows that pass this
-    # df or np adjacency_matrix = similarity_matrix > 0.9 -> True/false matrix
-    # adjacency_matrix.astype(int)
+    # Creating the adjacency matrix
+    adjacency_matrix = similarity_matrix > 0.997
+    adjacency_matrix = adjacency_matrix.astype(int)
+    # print('Adjacency matrix: ', adjacency_matrix[:100])
 
-    # largest noun phrases for labels
-
-    # adjacency matrix in graph theory
-    # pairwise distance matrix
+    G = nx.Graph()
+    create_adj_graph(adjacency_matrix, G)
+    plot_adj_graph(G)
+  
+    ### TODO:
     # pd.df.corr()
+    # largest noun phrases for labels
 
 
     # print('Starting TSNE')
@@ -218,7 +239,7 @@ def main():
 
     # print('Plotting word vectors')
     # df = pd.DataFrame(data=coordinates, index=updated_words_list)
-    # plot(df, updated_words_list, cluster_array)
+    # plot_word_cloud(df, updated_words_list, cluster_array)
 
 
 if __name__ == '__main__':
