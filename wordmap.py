@@ -115,16 +115,42 @@ def clustering(embeddings: list) -> np.ndarray:
     return cluster_array
 
 
-def create_adj_graph(adjacency_matrix: np.ndarray, G: nx.Graph) -> None:
-    i = 0
-    diagonal = 0
-    for i in range(0, len(adjacency_matrix[i])):
-        for j, edge in enumerate(adjacency_matrix[i]):
-            if edge:
-                if not j <= diagonal:
-                    # print(f'Adding edge ({i}, {j})')
-                    G.add_edge(i, j)   
-        diagonal += 1
+def create_adj_graph(similarity_matrix: np.ndarray, G: nx.Graph) -> None:
+    similarity_matrix = np.triu(similarity_matrix, k=1)
+    it = np.nditer(similarity_matrix, flags=['multi_index'], order='C')
+    for edge in it:
+        if edge > 0.95:
+            # print(f'Adding edge: ({it.multi_index[0]}, {it.multi_index[1]}, weight = {edge})')
+            G.add_edge(it.multi_index[0], it.multi_index[1], weight=edge)
+    
+    # Other attempts:
+
+    # Diagonal indices
+    # indices = np.diag_indices_from(similarity_matrix)
+
+    # for diag_i, diag_j in zip(indices[0], indices[1]):
+    #     for index, value in enumerate(similarity_matrix[diag_i, diag_j + 1])
+    #         if j > 0.95:
+    #             print(f'Adding edge ({i}, {j})')
+    #             G.add_edge(i, j)   
+    #     diagonal += 1
+
+    # n = len(similarity_matrix[0])
+    # upper_triangle_indices_no_diag = np.triu_indices(n-1, k=1) # n-1 is the size because the shift from the diag is 1 (k=1)
+    # print(f'Upper indices[0]: {upper_triangle_indices_no_diag[0]}')
+    # print(f'Upper indices[1]: {upper_triangle_indices_no_diag[1]}')
+    # first_loop = 0
+    # loop through indices of the upper triangle from similarity_matrix and add [i, j] to adjacency graph
+    # for i, index_i in enumerate(upper_triangle_indices_no_diag[0]):
+    #     first_loop += 1
+    #     print(f'{first_loop = }')
+    #     for j, index_j in enumerate(upper_triangle_indices_no_diag[1]):
+    #         # print(f'{j = }')
+    #         if similarity_matrix[index_i, index_j] > 0.95:
+    #             G.add_edge(index_i, index_j, similarity_matrix[index_i][index_j])
+    #             print(f'Added edge: ({index_i}, {index_j}); Value: {similarity_matrix[index_i, index_j]}')
+    #         else:
+    #             continue
 
 
 def plot_adj_graph(G: nx.Graph) -> None:
@@ -206,15 +232,14 @@ def main():
     # print(updated_words_list)
   
     similarity_matrix = get_similarity_matrix(np_array_sent_vecs_norm)
-    # print('Similarity matrix: ', similarity_matrix[:10])
 
     # Creating the adjacency matrix
-    adjacency_matrix = similarity_matrix > 0.997
-    adjacency_matrix = adjacency_matrix.astype(int)
-    # print('Adjacency matrix: ', adjacency_matrix[:100])
-
+    # First implementation:
+    # adjacency_matrix = similarity_matrix > 0.997 # returning True for every entry that is greater than 0.997
+    # adjacency_matrix = adjacency_matrix.astype(int) # changing True to 1 and False to 0
+    # Second implementation:
     G = nx.Graph()
-    create_adj_graph(adjacency_matrix, G)
+    create_adj_graph(similarity_matrix, G)
     plot_adj_graph(G)
   
     ### TODO:
