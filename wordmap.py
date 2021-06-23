@@ -154,8 +154,9 @@ def create_adj_graph(similarity_matrix: np.ndarray, G: nx.Graph) -> None:
 
 
 def plot_adj_graph(G: nx.Graph) -> None:
-    plt.subplot(111)
-    nx.draw_networkx(G, pos=None, arrows=None, with_labels=True)
+    plt.subplot(1, 1, 1)
+    pos = nx.spring_layout(G, k=0.15, seed=42)
+    nx.draw_networkx(G, pos=pos)
     plt.show()
 
 
@@ -240,6 +241,8 @@ def main():
     # Second implementation:
     G = nx.Graph()
     create_adj_graph(similarity_matrix, G)
+    # print(G.edges)
+    # print(G.adj)
     plot_adj_graph(G)
   
     ### TODO:
