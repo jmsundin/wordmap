@@ -22,7 +22,7 @@ def read_write(file_name: str, mode: str, doc=None, items: list=None):
     with open(file_name, mode) as f:
         if mode == 'wb':
             if '.txt' in file_name and doc is not None:
-                f.writelines(doc.to_bytes())
+                f.write(doc.to_bytes())
             if '.npy' in file_name:
                 np.save(f, items, allow_pickle=True)
                 return None            
@@ -221,8 +221,8 @@ def main():
         # nlp = spacy.load('en_core_web_lg') # Load the English core web large model
         end_time_load_model = time.time()
         print('Loading model time: ', end_time_load_model - start_time_load_model)
-        print(f'{nl')
-        # read_write(spacy_doc_txt, mode_wb, doc=nlp(text))
+        doc = nlp(text)
+        read_write(spacy_doc_txt, mode_wb, doc=doc)
 
     if os.path.exists(sent_vecs_npy):
         if os.path.getsize(sent_vecs_npy) > 0:
