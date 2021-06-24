@@ -2,7 +2,7 @@ import time
 import sys
 import os.path
 
-# import subprocess # uncomment if you want to run asciidoc3 on a file
+import subprocess
 import spacy
 import pandas as pd
 import numpy as np
@@ -15,16 +15,24 @@ from spacy.pipeline.dep_parser import DEFAULT_PARSER_MODEL
 from spacy.matcher import Matcher
 from sklearn.cluster import KMeans
 from openTSNE import TSNE
+from collections import Counter
 
 
-def read_write(file_name: str, mode: str, items: list = []):
+def read_write(file_name: str, mode: str, doc=None, items: list=None):
     with open(file_name, mode) as f:
         if mode == 'wb':
-            np.save(f, items, allow_pickle=True)
-            return None            
+            if '.txt' in file_name and doc is not None:
+                f.writelines(doc.to_bytes())
+            if '.npy' in file_name:
+                np.save(f, items, allow_pickle=True)
+                return None            
         elif mode == 'rb':
-            items = np.load(f, allow_pickle=True)
-            return items
+            if '.txt' in file_name and doc is not None:
+                doc_bytes = f.readlines()
+                return Doc(doc.vocab).from_bytes(doc_bytes)
+            if '.npy' in file_name:
+                items = np.load(f, allow_pickle=True)
+                return items
 
 
 def get_sents(nlp: spacy.language.Language, text: str) -> list:
@@ -61,6 +69,10 @@ def get_sent_vec_norm(sent_vecs: list) -> np.array:
     for i, sent_vec in enumerate(sent_vecs):
         sent_vecs[i] = sent_vec / np.linalg.norm(sent_vec) # 2-norm is default with vectors
     return np.array(sent_vecs)
+
+
+def get_most_common_noun_phrases(doc) -> dict:
+    return Counter(list(doc.noun_phrases)).most_common(5)
 
 
 def get_similarity_matrix(np_array_sent_vecs_norm: np.array) -> list:
@@ -178,9 +190,14 @@ def plot_word_cloud(df: pd.DataFrame, updated_words_list: list, cluster_array: n
 
 def main():
     chap6_word_vecs_html = 'Chapter 06 -- Reasoning with Word Vectors (Word2vec).html'
+    spacy_doc_txt = 'spacy_doc.txt'
     sent_vecs_npy = 'sentence_vectors.npy'
+    mode_rb = 'rb'
+    mode_wb = 'wb'
+    mode_r = 'r'
+    mode_w = 'w'
 
-    if not os.path.exists(chap6_word_vecs_html):
+    if not os.path.exists(chap6_word_vecs_html) or os.path.getsize(chap6_word_vecs_html) == 0:
         print('Running asciidoc3')
         try:
             subprocess.run(args=['asciidoc3', '-a', 'toc', '-n', '-a', 'icons', 'Chapter 06 -- Reasoning with Word Vectors (Word2vec).adoc'])
@@ -188,30 +205,38 @@ def main():
             print('Error trying to run asciidoc3: ', e)
     
     if os.path.exists(chap6_word_vecs_html):
-        mode_r = 'r'
-        chapter6_html = open(chap6_word_vecs_html, mode_r).read()
-        bsoup = BeautifulSoup(chapter6_html, 'html.parser')
-        text = bsoup.get_text()
+        if os.path.getsize(chap6_word_vecs_html) > 0:
+            chapter6_html = open(chap6_word_vecs_html, mode_r).read()
+            bsoup = BeautifulSoup(chapter6_html, 'html.parser')
+            text = bsoup.get_text()
+    
+    if os.path.exists(spacy_doc_txt):
+        if os.path.getsize(spacy_doc_txt) > 0:
+            doc = read_write(spacy_doc_txt, mode_rb)
 
-    if os.path.exists(sent_vecs_npy):
-        # reading sentence vectors from file
-        mode_r = 'rb'
-        np_array_sent_vecs_norm = read_write(sent_vecs_npy, mode_r)
-        # print('sentence_vectors.npy: ', np_array_sent_vecs_norm[:10])
-        print('Number of sentence vectors: ', len(np_array_sent_vecs_norm))
-
-    if not os.path.exists(sent_vecs_npy):
+    if not os.path.exists(spacy_doc_txt) or os.path.getsize(spacy_doc_txt) == 0:
         print('Loading spaCy language model')
         start_time_load_model = time.time()
         nlp = spacy.load('en_core_web_md') # English core web medium model
         # nlp = spacy.load('en_core_web_lg') # Load the English core web large model
         end_time_load_model = time.time()
         print('Loading model time: ', end_time_load_model - start_time_load_model)
-        
+        print(f'{nl')
+        # read_write(spacy_doc_txt, mode_wb, doc=nlp(text))
+
+    if os.path.exists(sent_vecs_npy):
+        if os.path.getsize(sent_vecs_npy) > 0:
+            # reading sentence vectors from file
+            mode_rb = 'rb'
+            np_array_sent_vecs_norm = read_write(sent_vecs_npy, mode_rb)
+            # print('sentence_vectors.npy: ', np_array_sent_vecs_norm[:10])
+            print('Number of sentence vectors: ', len(np_array_sent_vecs_norm))
+
+    if not os.path.exists(sent_vecs_npy) or os.path.getsize(sent_vecs_npy) == 0:
         print('Getting sentences')
         sentences = get_sents(nlp, text) # returns a list of sentences with Span type (spacy type)
-        print('Number of sentences: ', len(sentences))
-        print('Sentences MB: ', sys.getsizeof(sentences)/1024)
+        # print('Number of sentences: ', len(sentences))
+        # print('Sentences MB: ', sys.getsizeof(sentences)/1024)
 
         np_array_sent_vecs_norm = get_sent_vec_norm(get_sent_vecs(sentences))
 
@@ -233,16 +258,22 @@ def main():
     # print(updated_words_list)
   
     similarity_matrix = get_similarity_matrix(np_array_sent_vecs_norm)
+    
+    # TODO:
+    # most_common_noun_phrases = get_most_common_noun_phrases(doc)
 
     # Creating the adjacency matrix
     # First implementation:
     # adjacency_matrix = similarity_matrix > 0.997 # returning True for every entry that is greater than 0.997
     # adjacency_matrix = adjacency_matrix.astype(int) # changing True to 1 and False to 0
+    
     # Second implementation:
     G = nx.Graph()
     create_adj_graph(similarity_matrix, G)
+    
     # print(G.edges)
     # print(G.adj)
+    
     plot_adj_graph(G)
   
     ### TODO:
