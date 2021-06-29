@@ -18,28 +18,52 @@ from openTSNE import TSNE
 from collections import Counter
 
 
-def read_write(file_name: str, mode: str, doc=None, items: list=None):
+def read_write(file_name: str, mode: str, nlp=None, doc=None, items: list=None):
     with open(file_name, mode) as f:
         if mode == 'wb':
-            if '.txt' in file_name and doc is not None:
+            if nlp is not None:
+                nlp_bytes_data = nlp.to_bytes()
+                f.write(nlp_bytes_data)
+            if doc is not None:
                 f.write(doc.to_bytes())
+            if '.txt' in file_name and items is not None:
+                f.write(bytes(str(items), encoding='utf-8'))
             if '.npy' in file_name:
                 np.save(f, items, allow_pickle=True)
                 return None            
         elif mode == 'rb':
-            if '.txt' in file_name and doc is not None:
-                doc_bytes = f.readlines()
-                return Doc(doc.vocab).from_bytes(doc_bytes)
+            if 'nlp' in file_name:
+                lang_cls = spacy.util.get_lang_class(config["nlp"]["lang"])
+                nlp = lang_cls.from_config(config)
+                return nlp.from_bytes(f.read())
+            if 'doc' in file_name:
+                from spacy.tokens import Doc
+                from spacy.vocab import Vocab
+                doc_bytes = bytes(f.read())
+                return Doc(Vocab()).from_bytes(doc_bytes)
+            if 'noun' in file_name:
+                noun_phrases = f.readlines()
+                return noun_phrases
             if '.npy' in file_name:
                 items = np.load(f, allow_pickle=True)
                 return items
 
 
-def get_sents(nlp: spacy.language.Language, text: str) -> list:
-    config = {'punct_chars': None}
-    nlp.add_pipe('sentencizer', config=config)  
-    document = nlp(text)
-    return [sentence for sentence in document.sents]
+def get_word_vecs(nlp: spacy.language.Language, words: list) -> np.array:
+    tokens = [nlp(word) for word in words]
+    return np.array([token.vector for token in tokens])
+
+
+def get_sents_and_noun_phrases(doc: spacy.tokens.doc.Doc) -> list:
+    sentences = []
+    noun_phrases = []
+    for sent in doc.sents:
+        sent_noun_chunks = list(sent.noun_chunks)
+        if sent_noun_chunks:
+            sentences.append(sent)
+            noun_phrases.append(max(sent_noun_chunks))
+    print(f'Noun_phrases len: {len(noun_phrases)}')
+    return sentences, noun_phrases
 
 
 def parse_sents(sentences: list) -> list:
@@ -54,15 +78,10 @@ def parse_sents(sentences: list) -> list:
 def get_sent_vecs(sentences: list) -> list:
     sent_vecs = []
     for sent in sentences:
-        sent_vec = sent.vector
-        if not (0.0 in sent_vec or 0. in sent_vec):
-            sent_vecs.append(sent_vec)
+        sent_vecs.append(sent.vector)
+
+    print(f'Sent_vecs len: {len(sent_vecs)}')
     return sent_vecs
-
-
-def get_word_vecs(nlp: spacy.language.Language, words: list) -> np.array:
-    tokens = [nlp(word) for word in words]
-    return np.array([token.vector for token in tokens])
 
 
 def get_sent_vec_norm(sent_vecs: list) -> np.array:
@@ -71,7 +90,7 @@ def get_sent_vec_norm(sent_vecs: list) -> np.array:
     return np.array(sent_vecs)
 
 
-def get_most_common_noun_phrases(doc) -> dict:
+def get_most_common_noun_phrases(doc: spacy.tokens.doc.Doc) -> dict:
     return Counter(list(doc.noun_phrases)).most_common(5)
 
 
@@ -127,48 +146,23 @@ def clustering(embeddings: list) -> np.ndarray:
     return cluster_array
 
 
-def create_adj_graph(similarity_matrix: np.ndarray, G: nx.Graph) -> None:
+def create_adj_graph(similarity_matrix: np.ndarray, G: nx.Graph, noun_phrases: list) -> dict:
     similarity_matrix = np.triu(similarity_matrix, k=1)
-    it = np.nditer(similarity_matrix, flags=['multi_index'], order='C')
-    for edge in it:
+    iterator = np.nditer(similarity_matrix, flags=['multi_index'], order='C')
+    node_labels = dict()
+    for edge in iterator:
         if edge > 0.95:
-            # print(f'Adding edge: ({it.multi_index[0]}, {it.multi_index[1]}, weight = {edge})')
-            G.add_edge(it.multi_index[0], it.multi_index[1], weight=edge)
-    
-    # Other attempts:
+            node_labels[iterator.multi_index[0]] = noun_phrases[iterator.multi_index[0]]
+            G.add_node(iterator.multi_index[0])
+            # print(f'Noun_phrase: {noun_phrases[iterator.multi_index[0]]}')
+            G.add_edge(iterator.multi_index[0], iterator.multi_index[1], weight=edge)
+            # print(f'Adding edge: ({iterator.multi_index[0]}, {iterator.multi_index[1]}, weight = {edge})')
+    return node_labels
 
-    # Diagonal indices
-    # indices = np.diag_indices_from(similarity_matrix)
-
-    # for diag_i, diag_j in zip(indices[0], indices[1]):
-    #     for index, value in enumerate(similarity_matrix[diag_i, diag_j + 1])
-    #         if j > 0.95:
-    #             print(f'Adding edge ({i}, {j})')
-    #             G.add_edge(i, j)   
-    #     diagonal += 1
-
-    # n = len(similarity_matrix[0])
-    # upper_triangle_indices_no_diag = np.triu_indices(n-1, k=1) # n-1 is the size because the shift from the diag is 1 (k=1)
-    # print(f'Upper indices[0]: {upper_triangle_indices_no_diag[0]}')
-    # print(f'Upper indices[1]: {upper_triangle_indices_no_diag[1]}')
-    # first_loop = 0
-    # loop through indices of the upper triangle from similarity_matrix and add [i, j] to adjacency graph
-    # for i, index_i in enumerate(upper_triangle_indices_no_diag[0]):
-    #     first_loop += 1
-    #     print(f'{first_loop = }')
-    #     for j, index_j in enumerate(upper_triangle_indices_no_diag[1]):
-    #         # print(f'{j = }')
-    #         if similarity_matrix[index_i, index_j] > 0.95:
-    #             G.add_edge(index_i, index_j, similarity_matrix[index_i][index_j])
-    #             print(f'Added edge: ({index_i}, {index_j}); Value: {similarity_matrix[index_i, index_j]}')
-    #         else:
-    #             continue
-
-
-def plot_adj_graph(G: nx.Graph) -> None:
+def plot_adj_graph(G: nx.Graph, node_labels: dict) -> None:
     plt.subplot(1, 1, 1)
     pos = nx.spring_layout(G, k=0.15, seed=42)
-    nx.draw_networkx(G, pos=pos)
+    nx.draw_networkx(G, pos=pos, with_labels=True, labels=node_labels)
     plt.show()
 
 
@@ -192,6 +186,7 @@ def main():
     chap6_word_vecs_html = 'Chapter 06 -- Reasoning with Word Vectors (Word2vec).html'
     spacy_doc_txt = 'spacy_doc.txt'
     sent_vecs_npy = 'sentence_vectors.npy'
+    noun_phrases_txt = 'noun_phrases.txt'
     mode_rb = 'rb'
     mode_wb = 'wb'
     mode_r = 'r'
@@ -204,99 +199,53 @@ def main():
         except SubprocessError as e:
             print('Error trying to run asciidoc3: ', e)
     
-    if os.path.exists(chap6_word_vecs_html):
-        if os.path.getsize(chap6_word_vecs_html) > 0:
-            chapter6_html = open(chap6_word_vecs_html, mode_r).read()
-            bsoup = BeautifulSoup(chapter6_html, 'html.parser')
-            text = bsoup.get_text()
+    if os.path.exists(chap6_word_vecs_html) and os.path.getsize(chap6_word_vecs_html) > 0:
+        chapter6_html = open(chap6_word_vecs_html, mode_r).read()
+        bsoup = BeautifulSoup(chapter6_html, 'html.parser')
+        text = bsoup.get_text()
     
-    if os.path.exists(spacy_doc_txt):
-        if os.path.getsize(spacy_doc_txt) > 0:
-            doc = read_write(spacy_doc_txt, mode_rb)
+    print('Loading spaCy language model')
+    start_time_load_model = time.time()
+    nlp = spacy.load('en_core_web_md') # English core web medium model
+    # nlp = spacy.load('en_core_web_lg') # Load the English core web large model
+    end_time_load_model = time.time()
+    print('Loading model time: ', end_time_load_model - start_time_load_model)
 
-    if not os.path.exists(spacy_doc_txt) or os.path.getsize(spacy_doc_txt) == 0:
-        print('Loading spaCy language model')
-        start_time_load_model = time.time()
-        nlp = spacy.load('en_core_web_md') # English core web medium model
-        # nlp = spacy.load('en_core_web_lg') # Load the English core web large model
-        end_time_load_model = time.time()
-        print('Loading model time: ', end_time_load_model - start_time_load_model)
-        doc = nlp(text)
-        read_write(spacy_doc_txt, mode_wb, doc=doc)
+    config = {'punct_chars': None}
+    nlp.add_pipe('sentencizer', config=config)
+    doc = nlp(text)
 
-    if os.path.exists(sent_vecs_npy):
-        if os.path.getsize(sent_vecs_npy) > 0:
-            # reading sentence vectors from file
-            mode_rb = 'rb'
-            np_array_sent_vecs_norm = read_write(sent_vecs_npy, mode_rb)
-            # print('sentence_vectors.npy: ', np_array_sent_vecs_norm[:10])
-            print('Number of sentence vectors: ', len(np_array_sent_vecs_norm))
+    if os.path.exists(sent_vecs_npy) and os.path.getsize(sent_vecs_npy) > 0:
+        # reading sentence vectors from file
+        np_array_sent_vecs_norm = read_write(sent_vecs_npy, mode_rb)
+        noun_phrases = read_write(noun_phrases_txt, mode_rb)
+        # print('sentence_vectors.npy: ', np_array_sent_vecs_norm[:10])
+        print('Number of sentence vectors: ', len(np_array_sent_vecs_norm))
 
     if not os.path.exists(sent_vecs_npy) or os.path.getsize(sent_vecs_npy) == 0:
         print('Getting sentences')
-        sentences = get_sents(nlp, text) # returns a list of sentences with Span type (spacy type)
-        # print('Number of sentences: ', len(sentences))
-        # print('Sentences MB: ', sys.getsizeof(sentences)/1024)
+        # '0' in noun_phrases_0 -> del noun_phrases assoc w/ zero vectors
+        sentences, noun_phrases = get_sents_and_noun_phrases(doc)
+        
+        print('Number of sentences: ', len(sentences))
+        print('Sentences MB: ', sys.getsizeof(sentences)/1024)
 
-        np_array_sent_vecs_norm = get_sent_vec_norm(get_sent_vecs(sentences))
+        sent_vecs = get_sent_vecs(sentences)
+        np_array_sent_vecs_norm = get_sent_vec_norm(sent_vecs)
 
         # writing sentence vectors to file
-        mode_w = 'wb'
-        read_write(sent_vecs_npy, mode_w, np_array_sent_vecs_norm)
+        read_write(sent_vecs_npy, mode_w, items=np_array_sent_vecs_norm)
+        read_write(noun_phrases_txt, mode_wb, items=noun_phrases)
 
-    # print('Parsing sentences')
-    # words = parse_sents(sentences) # returns list of Token type
-    
-    # # Create a sorted list of unique words with set()
-    # sorted_words = sorted(set(words))
-
-    # print('Getting word vectors')
-    # word_vecs = get_word_vecs(nlp, sorted_words)
-
-    # updated_sent_vecs_list, updated_words_list = get_sent_vec_label(sent_vecs, word_vecs, sorted_words)
-
-    # print(updated_words_list)
-  
     similarity_matrix = get_similarity_matrix(np_array_sent_vecs_norm)
-    
-    # TODO:
-    # most_common_noun_phrases = get_most_common_noun_phrases(doc)
-
-    # Creating the adjacency matrix
-    # First implementation:
-    # adjacency_matrix = similarity_matrix > 0.997 # returning True for every entry that is greater than 0.997
-    # adjacency_matrix = adjacency_matrix.astype(int) # changing True to 1 and False to 0
-    
-    # Second implementation:
     G = nx.Graph()
-    create_adj_graph(similarity_matrix, G)
-    
-    # print(G.edges)
-    # print(G.adj)
-    
-    plot_adj_graph(G)
-  
-    ### TODO:
-    # pd.df.corr()
-    # largest noun phrases for labels
+    node_labels = create_adj_graph(similarity_matrix, G, noun_phrases)
+    plot_adj_graph(G, node_labels)
 
-
-    # print('Starting TSNE')
-    # start_time_tsne = time.time()
     # embeddings = dim_red(np_array_sent_vecs)
-    # end_time_tsne = time.time()
-    # print('Time for TSNE: ', end_time_tsne - start_time_tsne)
-
-    # print('Starting KMeans')
-    # start_time_clustering = time.time()
     # cluster_array = clustering(embeddings)
-    # end_time_clustering = time.time()
-    # print('Time for KMeans: ', end_time_clustering - start_time_clustering)
-
     # # Making the data pretty
     # coordinates = np.tanh(0.666*embeddings/np.std(embeddings))
-
-    # print('Plotting word vectors')
     # df = pd.DataFrame(data=coordinates, index=updated_words_list)
     # plot_word_cloud(df, updated_words_list, cluster_array)
 
