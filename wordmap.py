@@ -91,7 +91,7 @@ def get_sent_vec_norm(sent_vecs: list) -> np.array:
 
 
 def get_most_common_noun_phrases(doc: spacy.tokens.doc.Doc) -> dict:
-    return Counter(list(doc.noun_phrases)).most_common(5)
+    return Counter(list(doc.noun_chunks)).most_common(5)
 
 
 def get_similarity_matrix(np_array_sent_vecs_norm: np.array) -> list:
@@ -151,18 +151,24 @@ def create_adj_graph(similarity_matrix: np.ndarray, G: nx.Graph, noun_phrases: l
     iterator = np.nditer(similarity_matrix, flags=['multi_index'], order='C')
     node_labels = dict()
     for edge in iterator:
+        key = 0
+        value = ''
         if edge > 0.95:
-            node_labels[iterator.multi_index[0]] = noun_phrases[iterator.multi_index[0]]
+            key = iterator.multi_index[0]
+            value = noun_phrases[iterator.multi_index[0]]
+            # if str(value).isalnum():
+            node_labels[key] = value
             G.add_node(iterator.multi_index[0])
             # print(f'Noun_phrase: {noun_phrases[iterator.multi_index[0]]}')
             G.add_edge(iterator.multi_index[0], iterator.multi_index[1], weight=edge)
             # print(f'Adding edge: ({iterator.multi_index[0]}, {iterator.multi_index[1]}, weight = {edge})')
     return node_labels
 
+
 def plot_adj_graph(G: nx.Graph, node_labels: dict) -> None:
     plt.subplot(1, 1, 1)
     pos = nx.spring_layout(G, k=0.15, seed=42)
-    nx.draw_networkx(G, pos=pos, with_labels=True, labels=node_labels)
+    nx.draw_networkx(G, pos=pos, with_labels=True, labels=node_labels, font_weight='bold')
     plt.show()
 
 
