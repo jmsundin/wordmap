@@ -1,6 +1,7 @@
 import time
 import sys
 import os.path
+import re
 
 import subprocess
 import spacy
@@ -150,14 +151,15 @@ def create_adj_graph(similarity_matrix: np.ndarray, G: nx.Graph, noun_phrases: l
     similarity_matrix = np.triu(similarity_matrix, k=1)
     iterator = np.nditer(similarity_matrix, flags=['multi_index'], order='C')
     node_labels = dict()
+    pattern = re.compile(r'[\w\s]*[\'\"]?[\w\s]+\-?[\w\s]*[\'\"]?[\w\s]*')
     for edge in iterator:
         key = 0
         value = ''
         if edge > 0.95:
             key = iterator.multi_index[0]
-            value = noun_phrases[iterator.multi_index[0]]
-            # if str(value).isalnum():
-            node_labels[key] = value
+            value = str(noun_phrases[iterator.multi_index[0]])
+            if pattern.fullmatch(value) and (value.lower().rstrip() != 'figure'):
+                node_labels[key] = value
             G.add_node(iterator.multi_index[0])
             # print(f'Noun_phrase: {noun_phrases[iterator.multi_index[0]]}')
             G.add_edge(iterator.multi_index[0], iterator.multi_index[1], weight=edge)
