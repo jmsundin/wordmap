@@ -1,5 +1,10 @@
-# Ignore ascii files
+# Ignore asciidoc files
 *.asc
+*.adoc
+
+# Ignore html files
+*.html
+*.htm
 
 # Ignore ipynb checkpoints folder
 .ipynb_checkpoints
