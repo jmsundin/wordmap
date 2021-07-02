@@ -1,0 +1,84 @@
+[word embeddings, contents, your applications, vectors, words, word vectors, words, your NLP toolbox, them, work, the previous chapters, the planet, a word, words, our minds, them, those words, it, this chapter, a toddler, their dictionary definitions, web page, text, pets, you, each document, a statement, a statistical bag, typically fewer than ten tokens, adjacent sentences, the relevant words, concepts, the word vectors, much less the implied or hidden meanings, words, its literal and implied meaning, words, even "conceptness, floating point values, their limitations, words, analogies, these awesome word vectors, a famous person’s name, them, the early 20th century, you, women, you, note, this book, ours, you, you, this query, your answer, "woman, Analogy questions, an analogy question, something, germs, us, some "physics, you, music, music, that question, GRE exams, the word vector math, One possibility, cities, Seattle, standardized test form, less fun questions, multiple choice, C, multiple choice options, word vectors, analogy problems, your word, analogy, this chapter, Word vectors, them, a neural network, almost any linear machine learning model, each target word, Word2vec, Dean (https://arxiv.org/pdf/1301.3781.pdf, unlabeled text, the Word2vec vocabulary, Maine, "communities, Word2vec, cities, it, unlabeled, uncategorized, and unstructured natural language text, machine learning, some way, chapter, a tweet, machine learning, its predictions, humans, a human, natural language text, any labels, unsupervised learning, unsupervised machine learning techniques, the relationships, it, your sentences, you, an unsupervised learning algorithm, this unsupervised training technique, previous values, numbers, Word2vec, an end, those predictions, chapter, autoencoders, you, it, shorthand, it, your statements, the term "autoencoder, (http://ufldl.stanford.edu/tutorial/unsupervised/Autoencoders/, almost any dataset, all words, it, your word vectors, word vectors, chapter, something, their word-topic vectors, the same sentence, something, scores, that word, time, The pretrained word2vec model, "ghandiness, a nlpia PR, (https://github.com/totalgood/nlpia/blob/master/src/nlpia/book/examples/ch06_nessvectors.py, you, vectors, chapter, those analogy questions, words, Major League Soccer teams, you, a math expression, the previous chapter, clustering, compound words, word vectors, statements, Vector-oriented reasoning, (https://www.aclweb.org/anthology/N13-1090, a surprisingly accurate language model, (https://rare-technologies.com/rrp#episode_1_tomas_mikolov_on_ai, "ICRL2013 open review, the model’s performance, Computational Linguistics, vector algebra, 
+
+
+
+
+Figure, math, similarity, "Seattle Sounders, roughly the same direction, your sports team analogy question, Seattle Sounders, 0.007\\ 0.247\\, \end{bmatrix, \begin{bmatrix} 0.093\\, ... \end{bmatrix, 0.352\\, your word vector vocabulary, continuous real values, your NLP question, cities, much lower-dimensional Word2vec vectors, a natural language space, information extraction algorithm, only 40%, a significant margin, Word2vec, extremely large corpora, the Google News Corpus, this book, the same direction, \approx \vec{x}_{cup, their discovery, plural relationships, other semantic relationships, demographics, natural language vector space models, this chapter, figure, bus stop posters, each other semantically, the place, they, https://github.com/totalgood/nlpia/blob/master/src/nlpia/book/examples/ch06_w2v_us_cities_visualization.py, 
+
+
+
+
+Figure, a 2D map, a pretty good semantic map, almost identical word vectors, my mind, search engines, keyword matching, Dallas, Houston, a word vector pattern, a user, the training corpus, vector algebra, these vector representations, Word2vec embeddings, (the input word, (input words, the coming sections, the word vector representations, your own word vectors, applications, their pretrained word vector models, GloVe, (https://github.com/3Top/word2vec-api#where-to-get-a-pretrained-model, your word vector applications, a pretrained word2vec model, English Google News articles.[Original, https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM, classification, (https://github.com/facebookresearch/fastText, general purpose word models, a domain-specific word model, that domain, Skip-gram approach, an input word, the neural network, figure, 
+
+
+
+
+Figure, the skip-gram approach, a skip-gram, intervening tokens, the token "Monet, chapter, a word, the model’s vocabulary, classification problems, What, classification problems, all output notes, probabilities, the normalized exponential function, a three-neuron output layer, 0.2\end{bmatrix, softmax\sigma(v, \end{bmatrix, a probability distribution, the first two surrounding words, the training pair, 
+
+
+
+
+Figure, the skip-gram training, chapter, the vector representations, chapter, position, each target word, 
+
+
+Table, ] 
+Expected Output \[w_{t-2, 
+Expected Output \[w_{t-1, 
+Expected Output, Monet, Venice, the neural network, the input word, chapter, a one-hot vector, the input word, all remaining terms, the loss calculation, the semantic meaning, your corpus, similar surrounding words, the network, the embeddings, your word, the word vector, linear algebra, output neuron, the next layer, each matrix column, you, 
+
+
+
+
+Figure, word vector, your word vector, your vocabulary, words, table, an input vector, target token, 
+
+
+
+
+Figure, the CBOW approach
+
+
+
+Table, Monet, \[w_{t-2, 
+Input Word \[w_{t-1, 
+Input Word, \[w_{t, 
+Venice
+Canal, Venice, output, + w_{t+2, the output, the highest probability, 
+
+
+
+
+Figure, words, words, the target word, that window, CBOW, rare terms, the network structure, frequent words, Computational tricks, various computational tricks, three improvements, bigrams, this prediction, the Word2vec vocabulary, 
+
+
+Equation 6.5 Bigram scoring functionscore(w_{i}, w_{j, \frac{count(w_{i} w_{j, a pair term, "San Francisco, _, "Francisco, the individual words, "Timbers, model training, 
+
+
+Subsampling frequent tokens, subsample frequent words, significant information, this false semantic similarity training, words, your vocabulary, their neighboring words, their frequency, TF-IDF vectors, the rarer words, a given word, 6.6 Subsampling probability, \sqrt{\frac{t}{f(w_{i, the subsampling probability, those documents, the literature, 68%, tokenization, analogy questions, negative sampling, the network, your vocabulary, the large one-hot vector, negative sampling, their weights, their specific output, the trained network, 5 to 20 samples, his team, the gensim.word2vec module, the previous section, the pretrained models, word vectors, chapter, installation instructions, the following command, Google Drive, the gensim package, memory, the limit keyword argument, the 2M Word2vec vectors, word vectors, the development phase, we, The gensim, any given word vector, this chapter, unrelated terms, a return value, a distance, a continuous vector space model, any given word, such a big deal, unrelated terms, all other list terms, the most_similar method call, two terms, .similarity, a KeyedVector instance, the dictionary key, the vector dimensions, a shape, you, work, they, this chapter, your own Word vector representations, your own domain-specific word vector models, the reference word2vec model, Mikolov, your model accuracy, your own word2vec model, chapter, Preprocessing steps, tokens, tokens, neighboring sentences, the following structure, chapter, the Wall Street Journal, the highest accuracy, your domain, your word2vec training, your domain-specific word2vec model, the word2vec module, a few setup details, the word vector, the word2vec model, the min count, the min count, the training, import multiprocessing, num_workers = multiprocessing.cpu_count, frequent terms, your training, a word2vec model, time, minutes, sentences, your corpus, a much larger memory consumption, memory, interest, the unnecessary information, your neural network, -, most Word2vec applications, the output layer, later use, the previous section, a saved word2vec model, GloVe (Global Vectors, backpropagation, gradient descent, the cost function, a square matrix, Word2vec produces.[GloVe, Christopher D. Manning, the co-occurrence matrix, their SVD approach, its name, much less time, the text data, Word2vec and GloVe performance, optimization, the word embeddings, new word vector models, more accurate results, smaller corpora, the same amount, et al, the model training, Word2vec, even single characters, the original Word2vec approach, 294 languages, https://github.com/facebookresearch/fastText/blob/master/pretrained-vectors.md, Zulu, Germans, the available Wikipedia corpora, languages, the pretrained fastText models, Google’s Word2vec model, choice, 9.6GB, gensim, import FastText, the model’s bin and vec files, gensim, the Word2vec implementations, the fastText models, chapter, you, those documents, each document, Doc2vec document vectors, this chapter, size, that LSA matrix, Word2vec, both related and unrelated terms, LSA, one document, the same words, incremental or online training, the new documents, your lexicon, your one-hot vectors, your model, Word2vec, those documents, it, it, Word2vec reasoning, "University = Hogwarts, https://github.com/nchah/word2vec4everything#harry-potter, LSA, 
+
+
+
+Faster training, analogy questions, word relationships, interesting discoveries, the word vectors, visualization functionality, chapter, the Google News corpus, other city and state names, Word2vec vectors, nlpia, the pretrained Google News word vectors, 300 vector dimensions, available memory, chapter, 3 million Word2vec vectors, Google News articles, all those news articles, word2vec vocabulary frequencies, _, the Google News corpus, -gram, the Google News corpus, your list, 
+
+
+Cosine distance, meaning, meaning, KeyedVectors, "city, the world, population, Word2vec distance, it, just the United States, its abbreviation, your Word2vec vocabulary, Maine, that city, the vectors, vector-oriented reasoning, a big DataFrame, your Word2vec vocabulary, US state word vectors, cultural or economic similarities, the corpus, 
+
+
+
+
+
+
+Word vectors, the training corpus, deposits, streams, that gender bias, Google News articles, the bias, a biased world, the cities, they, your word relationship, Reno, state abbreviations, a human-understandable 2D representation, a 2D plot, the vectors, the optimal photograph, you, your application, a 2D plot, US cities, visualization, you, the DataFrame index, US cities, words, training, similar words, them, "peanuts, you, your data, you, city population, documents, a dimension reduction technique, PCA, the input vectors, cities, BOW vectors, t-Distributed Stochastic Neighbor Embedding, later chapters, the word vector, their meaning, embeddings, English, Egyptian tombs, words, Rome, a substitution, https://en.wikipedia.org/wiki/Substitution_cipher, Word2vec, figure, symbols, 
+
+
+
+
+Figure, zip codes, Data Science, those ID numbers, natural languages, Document similarity, entire documents, figure, " (https://arxiv.org/pdf/1405.4053v2.pdf, the document, the prediction, the training set, 
+
+
+
+
+Figure, input, the training phase, its weights, the whole document, a corpus, document vectors, document vectors, workers, your corpus, all punctuation, chapter, a time, 
+
+
+MEAP reader, a bulky python list, RAM, your documents, the 300D Google News word2vec vectors, your vocabulary, the vocabulary, 10 epochs, your training_corpus:
+training_corpus = np.empty(len(corpus, the instantiated and trained model, new vectors, iterations, similar documents, each document vector, a document classifier, words, most Word2vec pretrained models, your own word vector vocabularies, places, chapter, 20:58:21 EDT]
